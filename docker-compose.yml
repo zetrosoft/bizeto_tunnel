@@ -1,0 +1,108 @@
+services:
+  # 1. Perisai Luar (Layer 4/7 Shield)
+  haproxy:
+    image: haproxy:2.8-alpine
+    container_name: bijexa-haproxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "4321:4321"
+      - "50051:50051"
+    volumes:
+      - ./infra/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      - bijexa-network
+    depends_on:
+      - traefik
+      - relay
+
+  # 2. Otomasi SSL & Routing (Layer 7 Automator)
+  traefik:
+    image: traefik:v2.11
+    container_name: bijexa-traefik
+    restart: always
+    command:
+      - "--configfile=/etc/traefik/traefik.toml"
+      - "--entrypoints.control.address=:50051"
+      - "--entrypoints.tunnel.address=:4321"
+    volumes:
+      - ./infra/traefik/traefik.toml:/etc/traefik/traefik.toml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data/letsencrypt:/letsencrypt
+    networks:
+      - bijexa-network
+
+  # 3. Server Relay (Core Application)
+  relay:
+    build:
+      context: .
+      dockerfile: infra/relay.Dockerfile
+    image: bijexa-relay:v8
+    container_name: bijexa-relay
+    restart: always
+    env_file:
+      - .env
+    networks:
+      - bijexa-network
+      - jkk-backbone
+    labels:
+      - "traefik.enable=true"
+      # --- HTTP Routing (Dashboard & API) ---
+      - "traefik.http.routers.relay-api.rule=Host(`api.samkarsa.com`) || (Host(`bijexa.samkarsa.com`) && PathPrefix(`/api`))"
+      - "traefik.http.routers.relay-api.entrypoints=websecure"
+      - "traefik.http.routers.relay-api.tls.certresolver=myresolver"
+      - "traefik.http.services.relay-api.loadbalancer.server.port=8080"
+
+      # --- Wildcard Tunnel Routing (HTTPS) ---
+      - "traefik.http.routers.relay-tunnels.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.bijexa.samkarsa.com`)"
+      - "traefik.http.routers.relay-tunnels.entrypoints=websecure"
+      - "traefik.http.routers.relay-tunnels.tls.certresolver=myresolver"
+      - "traefik.http.services.relay-tunnels.loadbalancer.server.port=8081"
+
+      # --- gRPC Routing (Control Plane) ---
+
+      - "traefik.tcp.routers.relay-grpc.rule=HostSNI(`bijexa.samkarsa.com`) || HostSNI(`api.samkarsa.com`)"
+      - "traefik.tcp.routers.relay-grpc.entrypoints=control"
+      - "traefik.tcp.routers.relay-grpc.tls.certresolver=myresolver"
+      - "traefik.tcp.routers.relay-grpc.service=relay-grpc-svc"
+      - "traefik.tcp.services.relay-grpc-svc.loadbalancer.server.port=50051"
+
+      # --- Yamux Routing (Data Plane) ---
+      - "traefik.tcp.routers.relay-tunnel.rule=HostSNI(`bijexa.samkarsa.com`)"
+      - "traefik.tcp.routers.relay-tunnel.entrypoints=tunnel"
+      - "traefik.tcp.routers.relay-tunnel.tls.certresolver=myresolver"
+      - "traefik.tcp.routers.relay-tunnel.service=relay-tunnel-svc"
+      - "traefik.tcp.routers.relay-tunnel.tls.certresolver=myresolver"
+      - "traefik.tcp.services.relay-grpc-svc.loadbalancer.server.port=50051"
+      - "traefik.tcp.services.relay-tunnel-svc.loadbalancer.server.port=4321"
+
+      - "traefik.docker.network=bijexa-network"
+
+
+  # 4. Web Dashboard (Frontend)
+  dashboard:
+    build:
+      context: .
+      dockerfile: infra/dashboard.Dockerfile
+    image: bijexa-dashboard:v5
+    container_name: bijexa-dashboard
+    restart: always
+    env_file:
+      - .env
+    networks:
+      - bijexa-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`bijexa.samkarsa.com`)"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls.certresolver=myresolver"
+      - "traefik.http.services.dashboard.loadbalancer.server.port=80"
+      - "traefik.docker.network=bijexa-network"
+
+networks:
+  bijexa-network:
+    name: bijexa-network
+    driver: bridge
+  jkk-backbone:
+    external: true

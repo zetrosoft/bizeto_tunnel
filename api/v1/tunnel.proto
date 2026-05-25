@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package bizeto.v1;
+
+option go_package = "github.com/bizeto/bizeto-tunnel/api/v1";
+
+// TunnelService mengelola kontrol dan koordinasi antara Agent dan Relay.
+service TunnelService {
+  // Handshake awal untuk autentikasi agen dan mendapatkan konfigurasi tunnel.
+  rpc RegisterAgent(RegisterRequest) returns (RegisterResponse);
+  
+  // Stream dua arah untuk pesan kontrol, heartbeat, dan update konfigurasi.
+  rpc ControlStream(stream ControlMessage) returns (stream ControlMessage);
+}
+
+message RegisterRequest {
+  string api_key = 1;      // API Key yang didapat dari dashboard.
+  string version = 2;      // Versi biner agen.
+  string hostname = 3;     // Nama host agen (untuk logging/identifikasi).
+  string mac_address = 4;  // Alamat MAC perangkat keras (untuk validasi trial).
+}
+
+message RegisterResponse {
+  bool success = 1;
+  string assigned_domain = 2; // Subdomain atau kustom domain yang diberikan.
+  string tunnel_token = 3;    // Token unik untuk enkripsi sesi tunneling.
+  string error_message = 4;   // Pesan jika registrasi gagal.
+}
+
+message ControlMessage {
+  enum Type {
+    PING = 0;
+    PONG = 1;
+    RECONNECT = 2;
+    CONFIG_UPDATE = 3;
+    NOTIFY_LOCAL_OFFLINE = 4;
+  }
+  Type type = 1;
+  string payload = 2;       // Data tambahan dalam format JSON atau string mentah.
+}

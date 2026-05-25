@@ -1,0 +1,43 @@
+services:
+  # 1. Server Relay (Core) - Local Dev Mode
+  relay:
+    platform: linux/arm64
+    build:
+      context: .
+      dockerfile: Dockerfile.dev.relay
+    container_name: bijexa-relay-dev
+    restart: always
+    env_file:
+      - .env.dev
+    ports:
+      - "8082:8080"   # API & OAuth Callback
+      - "4321:4321"   # Agent Control Plane
+    volumes:
+      - ./data/certs:/app/data/certs
+      - .:/app        # Hot reload for Go code
+    networks:
+      - bijexa-network-dev
+
+  # 2. Web Dashboard - Local Dev Mode
+  dashboard:
+    platform: linux/arm64
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile.dev
+    container_name: bijexa-dashboard-dev
+    restart: always
+    env_file:
+      - .env.dev
+    ports:
+      - "6500:6500"
+    depends_on:
+      - relay
+    volumes:
+      - ./dashboard:/app
+      - /app/node_modules
+    networks:
+      - bijexa-network-dev
+
+networks:
+  bijexa-network-dev:
+    driver: bridge

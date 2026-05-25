@@ -1,0 +1,28 @@
+[api]
+  dashboard = true
+  insecure = true
+
+[accessLog]
+
+[entryPoints]
+  [entryPoints.web]
+    address = ":80"
+
+  [entryPoints.websecure]
+    address = ":443"
+
+  [entryPoints.control]
+    address = ":50051"
+
+  [entryPoints.tunnel]
+    address = ":4321"
+
+[providers.docker]
+  endpoint = "unix:///var/run/docker.sock"
+  exposedByDefault = false
+
+[certificatesResolvers.myresolver.acme]
+  email = "admin@samkarsa.com" # Ganti dengan email Anda
+  storage = "/letsencrypt/acme.json"
+  [certificatesResolvers.myresolver.acme.httpChallenge]
+    entryPoint = "web"
