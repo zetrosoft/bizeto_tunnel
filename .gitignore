@@ -14,3 +14,7 @@
 /bizeto-agent
 /bizeto-agent-*
 /gcli-request-*
+GEMINI.md
+MEMORY.md
+bizeto.json
+build*.sh
