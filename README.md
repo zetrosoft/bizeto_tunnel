@@ -2,6 +2,8 @@
 
 BIZETO-Tunnel is a high-performance tunneling solution that allows you to securely expose local services to the public internet, focusing on custom branding, security hardening, and low latency.
 
+[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge&logo=paypal)](https://www.paypal.com/paypalme/iswanputera)
+
 ## 🚀 Quick Start for Developers
 
 ### 1. Prerequisites
@@ -79,38 +81,11 @@ go run cmd/agent/main.go --key DEV-KEY-123 --port 8080
 
 ---
 
-## 📜 Documentation
-Developers are **REQUIRED** to review these documents before contributing:
-1.  [Technical Architecture (HLD)](docs/Technical_Full_Document.md) - System overview.
-2.  [Implementation Spec (LLD)](docs/Implementation_LLD.md) - Protobuf specs and DB schema.
-3.  [Infrastructure Spec](docs/Infrastruktur_Spec.md) - Server and scalability requirements.
-4.  [User Manual Agent](docs/User_Manual_Agent.md) - End-user operational guide.
-
----
-
 ## 🤝 Contribution
 1.  Branch out from `develop`.
 2.  Adhere to `go fmt` standards.
 3.  Include unit tests for all new features in the `internal/` directory.
 4.  Submit a Pull Request for review by the Lead Architect.
-
----
-
-## 💰 Support & Donations
-If you find this project valuable for your infrastructure or security investigations, please consider supporting the developer:
-*   **PayPal:** [iswanputera](https://www.paypal.com/paypalme/iswanputera)
-
----
-
-## 🔍 Featured Forensic Case Study
-This tool has been utilized in high-stakes forensic investigations. Below is a summary of a recent report:
-
-**Case: Forensic Investigation - mahkota188gaming@gmail.com**
-*   **Timestamp:** 2026-05-18
-*   **Infrastructure Recon:** Mapped Google Workspace mail servers and DNS records.
-*   **OSINT Footprinting:** Identified linked profiles and recovery leads (Phone ending in ..74).
-*   **Action Plan:** Secured account with hardware keys and revoked malicious OAuth tokens.
-*   *Full details available in security logs.*
 
 ---
 
